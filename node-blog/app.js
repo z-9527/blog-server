@@ -2,7 +2,7 @@ const http = require('http')
 const querystring = require('querystring')
 const handleBlogRouter = require('./src/router/blog')
 const handleUserRouter = require('./src/router/user')
-const { getPostData } = require('./src/utils/util')
+const { getPostData, cookieToObj } = require('./src/utils/util')
 
 const serverHandle = async (req, res) => {
     // 设置返回格式 JSON
@@ -12,6 +12,9 @@ const serverHandle = async (req, res) => {
     const url = req.url
     req.path = url.split('?')[0]
     req.query = querystring.parse(url.split('?')[1])
+
+    //处理cookie
+    req.cookie = cookieToObj(req.headers.cookie)
 
     //处理post数据
     const bodyData = await getPostData(req)
@@ -29,9 +32,13 @@ const serverHandle = async (req, res) => {
     }
 
     //用户路由
-    const userData = handleUserRouter(req, res)
-    if (userData) {
-        res.end(JSON.stringify(userData))
+    const userResult = handleUserRouter(req, res)
+    if (userResult) {
+        userResult.then(userData => {
+            res.end(
+                JSON.stringify(userData)
+            )
+        })
         return
     }
 
